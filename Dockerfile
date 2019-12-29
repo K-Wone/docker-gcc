@@ -2,6 +2,8 @@
 ARG BASE_VERSION=latest
 FROM alpine:${BASE_VERSION} AS builder
 
+USER root
+
 # install basic buiding tools
 RUN set -eu; \
       \
@@ -13,6 +15,7 @@ RUN set -eu; \
               linux-headers \
               make \
               mpc1-dev \
+              mpfr-dev \
               musl \
               wget \
               which
@@ -23,43 +26,61 @@ ENV GCC_VERSION=${GCC_VERSION:-"9.2.0"}
 ARG GCC_PREFIX
 ENV GCC_PREFIX=${GCC_PREFIX:-"/opt/gcc/${GCC_VERSION}"}
 ARG GCC_OPTIONS
-ENV GCC_OPTIONS=${GCC_OPTIONS:-"--enable-languages=c,c++ --disable-multilib --build=x86_64-alpine-linux-musl --host=x86_64-alpine-linux-musl --target=x86_64-alpine-linux-musl --disable-libsanitizer --disable-libatomic --disable-libitm --enable-bootstrap"}
+ENV GCC_OPTIONS=${GCC_OPTIONS:-"--enable-languages=c,c++ --disable-multilib --build=x86_64-alpine-linux-musl --host=x86_64-alpine-linux-musl --target=x86_64-alpine-linux-musl --disable-libsanitizer --disable-libatomic --disable-libitm"}
 
 ENV GCC_TARBALL="gcc-${GCC_VERSION}.tar.gz"
+ENV GCC_BUILD_DIR="/tmp/build_dir"
 
-# build and install gcc
+# the following instructions are organized to utilize docker caching
+# stage 1.1: download gcc source
 WORKDIR /tmp
-RUN set -eux; \
+RUN set -eu; \
+      \
+      mkdir ${GCC_BUILD_DIR}; \
       \
       wget "https://ftp.gnu.org/gnu/gcc/gcc-${GCC_VERSION}/${GCC_TARBALL}"; \
-      tar -zxf ${GCC_TARBALL}; \
-      mkdir build_dir; \
+      tar -zxf ${GCC_TARBALL}
+      # \
+      # download dependencies with official script
+      # cd gcc-${GCC_VERSION}; \
+      # ./contrib/download_prerequisites
+
+# stage 1.2: configure and install gcc
+WORKDIR ${GCC_BUILD_DIR}
+RUN set -eu; \
       \
-      cd gcc-${GCC_VERSION}; \
-      ./contrib/download_prerequisites; \
-      \
-      cd ../build_dir; \
       ../gcc-${GCC_VERSION}/configure \
                   --prefix=${GCC_PREFIX} \
-                  ${GCC_OPTIONS} \
-      ;\
+                  ${GCC_OPTIONS}; \
+      \
       make -j $(nproc) profiledbootstrap; \
-      make install-strip; \
-      rm -rf gcc-${GCC_VERSION} ${GCC_TARBALL} build_dir
+      make install-strip
+
+# stage 1.3: clean installation files
+WORKDIR /tmp
+RUN rm -rf gcc-${GCC_VERSION} ${GCC_TARBALL} ${GCC_BUILD_DIR}
 
 
 # stage 2: build the runtime environment
 ARG BASE_VERSION
 FROM alpine:${BASE_VERSION}
 
+USER root
+
 # install basic tools
+# note that the versions of the packages could vary between
+# different tags of Alpine
 RUN set -eu; \
       \
       sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' \
              /etc/apk/repositories; \
       apk add --no-cache \
               binutils \
-              libc-dev
+              gmp \
+              isl \
+              libc-dev \
+              mpc1 \
+              mpfr4
 
 # define environment variables
 ARG GCC_VERSION="9.2.0"
