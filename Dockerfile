@@ -1,6 +1,6 @@
 # stage 1: build GCC
-ARG BASE_VERSION=latest
-FROM alpine:${BASE_VERSION} AS builder
+ARG BASE_TAG=latest
+FROM alpine:${BASE_TAG} AS builder
 
 USER root
 
@@ -20,21 +20,15 @@ RUN set -eu; \
               wget \
               which
 
-# define environment variables for building GCC
-ARG GCC_VERSION
-ENV GCC_VERSION=${GCC_VERSION:-"9.2.0"}
-ARG GCC_PREFIX
-ENV GCC_PREFIX=${GCC_PREFIX:-"/opt/gcc/${GCC_VERSION}"}
-ARG GCC_OPTIONS
-ENV GCC_OPTIONS=${GCC_OPTIONS:-"--enable-languages=c,c++ --disable-multilib --build=x86_64-alpine-linux-musl --host=x86_64-alpine-linux-musl --target=x86_64-alpine-linux-musl --disable-libsanitizer --disable-libatomic --disable-libitm"}
-
+# the following instructions are organized to utilize docker caching
+# stage 1.1: download gcc source
+ARG GCC_VERSION="9.2.0"
+ENV GCC_VERSION=${GCC_VERSION}
 ENV GCC_TARBALL="gcc-${GCC_VERSION}.tar.gz"
 ENV GCC_BUILD_DIR="/tmp/build_dir"
 
-# the following instructions are organized to utilize docker caching
-# stage 1.1: download gcc source
 WORKDIR /tmp
-RUN set -eu; \
+RUN set -eux; \
       \
       mkdir ${GCC_BUILD_DIR}; \
       \
@@ -46,8 +40,12 @@ RUN set -eu; \
       # ./contrib/download_prerequisites
 
 # stage 1.2: configure and install gcc
+ARG GCC_OPTIONS="--enable-languages=c,c++ --disable-multilib --build=x86_64-alpine-linux-musl --host=x86_64-alpine-linux-musl --target=x86_64-alpine-linux-musl --disable-libsanitizer --disable-libatomic --disable-libitm"
+ENV GCC_OPTIONS=${GCC_OPTIONS}
+ENV GCC_PREFIX="/opt/gcc/${GCC_VERSION}"
+
 WORKDIR ${GCC_BUILD_DIR}
-RUN set -eu; \
+RUN set -eux; \
       \
       ../gcc-${GCC_VERSION}/configure \
                   --prefix=${GCC_PREFIX} \
@@ -62,8 +60,10 @@ RUN rm -rf gcc-${GCC_VERSION} ${GCC_TARBALL} ${GCC_BUILD_DIR}
 
 
 # stage 2: build the runtime environment
-ARG BASE_VERSION
-FROM alpine:${BASE_VERSION}
+ARG BASE_TAG
+FROM alpine:${BASE_TAG}
+
+LABEL maintainer="Wang An <wangan.cs@gmail.com>"
 
 USER root
 
@@ -96,3 +96,15 @@ ENV LIBRARY_PATH="${GCC_PATH}/lib64:${GCC_PATH}/lib:${LIBRARY_PATH}"
 ENV LD_LIBRARY_PATH="${GCC_PATH}/lib64:${GCC_PATH}/lib:${LD_LIBRARY_PATH}"
 
 WORKDIR /tmp
+
+
+# Build-time metadata as defined at http://label-schema.org
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VCS_URL
+LABEL org.label-schema.build-date=${BUILD_DATE} \
+      org.label-schema.name="GCC docker image" \
+      org.label-schema.description="A lightweight image for GCC" \
+      org.label-schema.vcs-ref=${VCS_REF} \
+      org.label-schema.vcs-url=${VCS_URL} \
+      org.label-schema.schema-version="1.0"
