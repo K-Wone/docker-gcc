@@ -9,6 +9,7 @@
 - `9.2.0`
 - `8.3.0`
 - `7.3.0`
+- `5.5.0`
 
 # How to use
 
@@ -26,11 +27,13 @@
 
 # How to build
 
+The base image is [spack/ubuntu-xenial](https://hub.docker.com/r/spack/ubuntu-xenial).
+
 ## make
 
 There are a bunch of build-time arguments you can use to build the image.
 
-It is hightly recommended that you build the image with `make`.
+It is highly recommended that you build the image with `make`.
 
 ```bash
 # Build an image for GCC 9.2.0
@@ -57,11 +60,4 @@ docker build \
 
 Arguments and their defaults are listed below.
 
-- `BASE_TAG`: value (default=`latest`)
-
-- `GCC_VERSION`: X.X.X (default=`9.2.0`)
-
-- `GCC_OPTIONS`: option\[=value\]
-  - Defaults to `--enable-languages=c,c++ --disable-multilib --build=x86_64-alpine-linux-musl --host=x86_64-alpine-linux-musl --target=x86_64-alpine-linux-musl --disable-libsanitizer --disable-libatomic --disable-libitm`
-  - Options needed to configure the installation.
-  - The default installation path is `/opt/gcc/${GCC_VERSION}` so that option `--prefix` is unnecessary.
+- `GCC_VERSION`: The version of GCC supported by spack (defaults to `9.2.0`)

@@ -3,8 +3,9 @@
 #===============================================================================
 
 # Build-time arguments
-SPACK_VERSION ?= 0.14
-GCC_VERSION   ?= 9.2.0
+BASE_TAG     ?= latest
+GCC_VERSION  ?= 9.2.0
+GCC_OPTIONS  ?= "--enable-languages=c,c++ --enable-threads=posix --disable-multilib --with-tune=generic --build=x86_64-alpine-linux-musl --host=x86_64-alpine-linux-musl --target=x86_64-alpine-linux-musl --disable-libsanitizer --disable-libatomic --disable-libitm"
 
 # Image name
 DOCKER_IMAGE ?= leavesask/gcc
@@ -13,6 +14,12 @@ DOCKER_TAG   := $(GCC_VERSION)
 #===============================================================================
 # Variables and objects
 #===============================================================================
+
+# Append a suffix to the tag if the version number of GCC
+# is specified
+ifneq ($(BASE_TAG),latest)
+    DOCKER_TAG = $(DOCKER_TAG)-alpine-$(BASE_TAG)
+endif
 
 BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 VCS_URL=$(shell git config --get remote.origin.url)
@@ -33,8 +40,9 @@ release: docker_build docker_push output
 docker_build:
 	# Build Docker image
 	docker build \
-                 --build-arg SPACK_VERSION=$(SPACK_VERSION) \
+                 --build-arg BASE_TAG=$(BASE_TAG) \
                  --build-arg GCC_VERSION=$(GCC_VERSION) \
+                 --build-arg GCC_OPTIONS=$(GCC_OPTIONS) \
                  --build-arg BUILD_DATE=$(BUILD_DATE) \
                  --build-arg VCS_URL=$(VCS_URL) \
                  --build-arg VCS_REF=$(GIT_COMMIT) \

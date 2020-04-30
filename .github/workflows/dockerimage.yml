@@ -1,6 +1,9 @@
 name: Build and Publish Docker
 
-on: [push]
+on:
+  push:
+    branches:
+      - master
 
 jobs:
   build:
@@ -20,3 +23,4 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         buildargs: BUILD_DATE,VCS_URL,VCS_REF
+        buildoptions: "--compress"
