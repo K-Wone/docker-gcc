@@ -27,7 +27,7 @@
 
 # How to build
 
-The base image is [spack/ubuntu-xenial](https://hub.docker.com/r/spack/ubuntu-xenial).
+The base image is [spack](https://hub.docker.com/r/spack).
 
 ## make
 
@@ -51,7 +51,8 @@ As an alternative, you can build the image with `docker build` command.
 
 ```bash
 docker build \
-        --build-arg BASE_TAG="latest" \
+        --build-arg SPACK_IMAGE="spack/ubuntu-bionic" \
+        --build-arg SPACK_VERSION="0.14" \
         --build-arg GCC_VERSION="9.2.0" \
         --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
         --build-arg VCS_REF=`git rev-parse --short HEAD` \
