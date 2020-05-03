@@ -14,8 +14,21 @@ ENV GCC_VERSION=${GCC_VERSION}
 RUN set -eu; \
       \
       spack install --show-log-on-error -y gcc@${GCC_VERSION}; \
+      spack clean -a; \
       spack load gcc@${GCC_VERSION}; \
       spack compiler add
+
+# setup development environment
+ENV ENV_FILE="$USER_HOME/setup-env.sh"
+RUN set -e; \
+      \
+      echo "#!/bin/env bash" > $ENV_FILE; \
+      echo "source /opt/spack/share/spack/setup-env.sh" >> $ENV_FILE; \
+      echo "spack load gcc@${GCC_VERSION}" >> $ENV_FILE
+
+# reset the entrypoint
+ENTRYPOINT []
+CMD []
 
 
 # Build-time metadata as defined at http://label-schema.org
@@ -29,8 +42,3 @@ LABEL org.label-schema.build-date=${BUILD_DATE} \
       org.label-schema.vcs-ref=${VCS_REF} \
       org.label-schema.vcs-url=${VCS_URL} \
       org.label-schema.schema-version="1.0"
-
-
-# setup entrypoint
-ENTRYPOINT ["/bin/bash"]
-CMD ["spack find"]
