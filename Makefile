@@ -7,6 +7,9 @@ SPACK_IMAGE   ?= spack/ubuntu-bionic
 SPACK_VERSION ?= 0.14
 GCC_VERSION   ?= 9.2.0
 
+# Spack variants
+EXTRA_SPECS   ?= "target=skylake"
+
 # Image name
 DOCKER_IMAGE ?= leavesask/gcc
 DOCKER_TAG   := $(GCC_VERSION)
@@ -37,6 +40,7 @@ docker_build:
                  --build-arg SPACK_IMAGE=$(SPACK_IMAGE) \
                  --build-arg SPACK_VERSION=$(SPACK_VERSION) \
                  --build-arg GCC_VERSION=$(GCC_VERSION) \
+                 --build-arg EXTRA_SPECS=$(EXTRA_SPECS) \
                  --build-arg BUILD_DATE=$(BUILD_DATE) \
                  --build-arg VCS_URL=$(VCS_URL) \
                  --build-arg VCS_REF=$(GIT_COMMIT) \

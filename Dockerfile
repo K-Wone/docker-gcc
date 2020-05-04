@@ -7,28 +7,30 @@ LABEL maintainer="Wang An <wangan.cs@gmail.com>"
 
 USER root
 
+ARG EXTRA_SPECS="target=skylake"
+ENV EXTRA_SPECS=${EXTRA_SPECS}
 ARG GCC_VERSION="9.2.0"
 ENV GCC_VERSION=${GCC_VERSION}
 
 # install GCC
 RUN set -eu; \
       \
-      spack install --show-log-on-error -y gcc@${GCC_VERSION}; \
+      spack install gcc@${GCC_VERSION} $EXTRA_SPECS; \
       spack clean -a; \
       spack load gcc@${GCC_VERSION}; \
       spack compiler add
 
 # setup development environment
-ENV ENV_FILE="$USER_HOME/setup-env.sh"
+ENV ENV_FILE="/root/setup-env.sh"
 RUN set -e; \
       \
       echo "#!/bin/env bash" > $ENV_FILE; \
       echo "source /opt/spack/share/spack/setup-env.sh" >> $ENV_FILE; \
-      echo "spack load gcc@${GCC_VERSION}" >> $ENV_FILE
+      echo "spack load gcc@$GCC_VERSION" >> $ENV_FILE
 
 # reset the entrypoint
 ENTRYPOINT []
-CMD []
+CMD ["/bin/bash"]
 
 
 # Build-time metadata as defined at http://label-schema.org
